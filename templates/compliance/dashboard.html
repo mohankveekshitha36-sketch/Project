@@ -1,0 +1,340 @@
+{% extends "base.html" %}
+
+{% block title %}Executive Dashboard | MediComply AI{% endblock %}
+{% block page_title %}Hospital Compliance Oversight{% endblock %}
+
+{% block content %}
+<!-- Real-time Alert Popup Area -->
+<div id="alertArea"></div>
+
+<div class="row g-4 mb-4">
+    <!-- Total Violations Card -->
+    <div class="col-lg-3 col-md-6 col-sm-12" data-aos="zoom-in" data-aos-delay="100">
+        <div class="glass-card p-4 border-start border-4 border-danger h-100">
+            <div class="d-flex justify-content-between mb-3">
+                <div class="rounded-circle bg-danger bg-opacity-10 p-3">
+                    <i class="fas fa-biohazard text-danger fa-xl"></i>
+                </div>
+                <div class="text-end">
+                    <span class="badge bg-danger bg-opacity-10 text-danger">+12% vs last month</span>
+                </div>
+            </div>
+            <h6 class="text-muted mb-1 text-uppercase small fw-bold">Active Violations</h6>
+            <h2 class="fw-bold mb-0 counter" data-target="{{ total_violations }}">0</h2>
+        </div>
+    </div>
+
+    <!-- Compliance Score Card -->
+    <div class="col-lg-3 col-md-6 col-sm-12" data-aos="zoom-in" data-aos-delay="200">
+        <div class="glass-card p-4 border-start border-4 border-primary h-100">
+            <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <h6 class="text-muted mb-0 text-uppercase small fw-bold">Compliance Score</h6>
+                    <span class="fw-bold text-primary">{{ compliance_score }}%</span>
+                </div>
+                <div class="progress">
+                    <div class="progress-bar bg-primary progress-bar-striped progress-bar-animated"
+                        style="width:{{ compliance_score }}%"></div>
+                </div>
+            </div>
+            <p class="text-muted small mb-0 mt-3"><i class="fas fa-info-circle me-1"></i> Based on latest 7-day audit
+                logs.</p>
+        </div>
+    </div>
+
+    <!-- Risk Score Card -->
+    <div class="col-lg-3 col-md-6 col-sm-12" data-aos="zoom-in" data-aos-delay="300">
+        <div class="glass-card p-4 border-start border-4 border-warning h-100">
+            <div class="d-flex justify-content-between mb-3">
+                <div class="rounded-circle bg-warning bg-opacity-10 p-3">
+                    <i class="fas fa-scale-unbalanced text-warning fa-xl"></i>
+                </div>
+                <div class="text-end">
+                    <div class="badge bg-soft-green text-medical-green">Stable</div>
+                </div>
+            </div>
+            <h6 class="text-muted mb-1 text-uppercase small fw-bold">Today's Risk Score</h6>
+            <h2 class="fw-bold mb-0 counter" data-target="{{ risk_score|floatformat:1 }}">0</h2>
+        </div>
+    </div>
+
+    <!-- Resolved Violations Card -->
+    <div class="col-lg-3 col-md-6 col-sm-12" data-aos="zoom-in" data-aos-delay="400">
+        <div class="glass-card p-4 border-start border-4 border-success h-100">
+            <div class="d-flex justify-content-between mb-3">
+                <div class="rounded-circle bg-success bg-opacity-10 p-3">
+                    <i class="fas fa-hand-holding-medical text-medical-green fa-xl"></i>
+                </div>
+                <div class="text-end">
+                    <i class="fas fa-arrow-trend-up text-success"></i>
+                </div>
+            </div>
+            <h6 class="text-muted mb-1 text-uppercase small fw-bold">Resolved Cases</h6>
+            <h2 class="fw-bold mb-0 counter" data-target="{{ resolved_violations }}">0</h2>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Activity Chart -->
+    <div class="col-lg-8" data-aos="fade-right">
+        <div class="glass-card p-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h5 class="fw-bold mb-0">System Activity Trend</h5>
+                <select class="form-select form-select-sm w-auto glass-card border-0">
+                    <option>Last 7 Days</option>
+                    <option>Last 30 Days</option>
+                </select>
+            </div>
+            <canvas id="activityChart" height="280"></canvas>
+        </div>
+    </div>
+    <!-- Severity Distribution -->
+    <div class="col-lg-4" data-aos="fade-left">
+        <div class="glass-card p-4 h-100">
+            <h5 class="fw-bold mb-4">Risk Severity Analysis</h5>
+            <div style="height: 230px;">
+                <canvas id="severityChart"></canvas>
+            </div>
+            <div class="mt-4">
+                <div class="d-flex justify-content-between small mb-1">
+                    <span>Critical Alerts (High)</span>
+                    <span class="fw-bold text-danger">{{ high_severity_alerts }}</span>
+                </div>
+                <div class="progress" style="height: 6px;">
+                    <div class="progress-bar bg-danger" style="width: 25%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row" data-aos="fade-up">
+    <div class="col-12">
+        <div class="glass-card p-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h5 class="fw-bold mb-0">AI Detected Potential Violations</h5>
+                <button class="btn btn-outline-primary btn-sm rounded-pill"><i class="fas fa-file-pdf me-2"></i> Export
+                    Audit Report</button>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle custom-table">
+                    <thead>
+                        <tr>
+                            <th>Violation ID</th>
+                            <th>Target Resource</th>
+                            <th>AI Confidence</th>
+                            <th>Risk Prob.</th>
+                            <th>Status</th>
+                            <th>Reasoning</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for violation in recent_violations %}
+                        <tr>
+                            <td class="fw-bold">#{{ violation.id }}</td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-primary bg-opacity-10 p-2 rounded me-2">
+                                        <i class="fas fa-file-medical text-primary"></i>
+                                    </div>
+                                    <div>
+                                        <div class="small fw-bold">{{ violation.activity.patient_id|default:"N/A" }}
+                                        </div>
+                                        <div class="x-small text-muted">{{
+                                            violation.activity.resource_accessed|default:"System Data" }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="me-2 fw-bold small">{{ violation.confidence_score }}%</div>
+                                    <div class="progress flex-grow-1" style="width: 60px; height: 4px;">
+                                        <div class="progress-bar bg-info"
+                                            style="width: {{ violation.confidence_score }}%"></div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span
+                                    class="badge {% if violation.severity == 'High' %}bg-danger{% elif violation.severity == 'Medium' %}bg-warning{% else %}bg-info{% endif %} bg-opacity-10 {% if violation.severity == 'High' %}text-danger{% elif violation.severity == 'Medium' %}text-warning{% else %}text-info{% endif %} border-0 p-2 rounded-3 w-100">
+                                    {{ violation.risk_probability }}% {{ violation.severity }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <span class="status-dot bg-warning me-2"></span>
+                                    <span class="small">{{ violation.status }}</span>
+                                </div>
+                            </td>
+                            <td>
+                                <small class="text-muted d-block text-truncate" style="max-width: 200px;"
+                                    title="{{ violation.ai_reason }}">
+                                    {{ violation.ai_reason|default:"Manual entry/General detection" }}
+                                </small>
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <button class="btn btn-sm btn-light border-0 px-3"><i
+                                            class="fas fa-eye"></i></button>
+                                    <button
+                                        class="btn btn-sm btn-light border-0 px-3 dropdown-toggle dropdown-toggle-split"
+                                        data-bs-toggle="dropdown"></button>
+                                    <div class="dropdown-menu glass-card">
+                                        <a class="dropdown-item" href="#">Mark Resolved</a>
+                                        <a class="dropdown-item" href="#">Assign to Officer</a>
+                                        <div class="dropdown-divider"></div>
+                                        <a class="dropdown-item text-danger" href="#">Delete Log</a>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center text-muted py-5">
+                                <i class="fas fa-search fa-3x mb-3 d-block opacity-25"></i>
+                                No active violations detected in current audit window.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .custom-table th {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: #6c757d;
+        border-bottom: none;
+        padding-bottom: 20px;
+    }
+
+    .custom-table td {
+        border-bottom: 1px solid rgba(0, 0, 0, 0.03);
+        padding: 15px 10px;
+    }
+
+    .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+
+    .x-small {
+        font-size: 0.7rem;
+    }
+
+    .counter {
+        transition: all 1s;
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Animated Counters
+    const counters = document.querySelectorAll('.counter');
+    counters.forEach(counter => {
+        const target = +counter.getAttribute('data-target');
+        const count = 0;
+        const updateCount = () => {
+            const current = +counter.innerText;
+            const inc = target / 50;
+            if (current < target) {
+                counter.innerText = Math.ceil(current + inc);
+                setTimeout(updateCount, 20);
+            } else {
+                counter.innerText = target;
+            }
+        };
+        updateCount();
+    });
+
+    // Activity Chart Upgrade
+    const activityCtx = document.getElementById('activityChart').getContext('2d');
+    const gradient = activityCtx.createLinearGradient(0, 0, 0, 400);
+    gradient.addColorStop(0, 'rgba(13, 110, 253, 0.3)');
+    gradient.addColorStop(1, 'rgba(13, 110, 253, 0)');
+
+    new Chart(activityCtx, {
+        type: 'line',
+        data: {
+            labels: {{ chart_labels| safe }},
+        datasets: [{
+            label: 'System Activity',
+            data: {{ chart_data| safe }},
+        borderColor: '#0d6efd',
+        borderWidth: 3,
+        backgroundColor: gradient,
+        fill: true,
+        tension: 0.4,
+        pointRadius: 6,
+        pointBackgroundColor: '#fff',
+        pointBorderColor: '#0d6efd',
+        pointBorderWidth: 3
+            }]
+        },
+        options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+            y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.02)' }, ticks: { color: '#999' } },
+            x: { grid: { display: false }, ticks: { color: '#999' } }
+        }
+    }
+    });
+
+    // Severity Chart Upgrade
+    const severityCtx = document.getElementById('severityChart').getContext('2d');
+    new Chart(severityCtx, {
+        type: 'doughnut',
+        data: {
+            labels: {{ severity_labels| safe }},
+        datasets: [{
+            data: {{ severity_data| safe }},
+        backgroundColor: ['#0dcaf0', '#ffc107', '#dc3545'],
+        hoverOffset: 15,
+        borderWidth: 0,
+        spacing: 5
+            }]
+        },
+        options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '80%',
+        plugins: {
+            legend: { position: 'bottom', labels: { usePointStyle: true, padding: 15, font: { size: 11 } } }
+        }
+    }
+    });
+
+    // Real-time Alert Simulation
+    {% if high_severity_alerts > 0 %}
+    setTimeout(() => {
+        const area = document.getElementById('alertArea');
+        area.innerHTML = `
+            <div class="alert-popup glass-card p-4 border-start border-5 border-danger shadow-lg">
+                <div class="d-flex align-items-center">
+                    <div class="bg-danger p-3 rounded-circle me-3">
+                        <i class="fas fa-radiation text-white fa-lg"></i>
+                    </div>
+                    <div>
+                        <h6 class="fw-bold mb-0 text-danger">CRITICAL THREAT DETECTED</h6>
+                        <p class="small text-muted mb-0">AI identified 1 new high-risk violation. Immediate review required.</p>
+                    </div>
+                </div>
+                <button type="button" class="btn-close position-absolute top-0 end-0 p-3" onclick="this.parentElement.remove()"></button>
+            </div>
+        `;
+    }, 2000);
+    {% endif %}
+</script>
+{% endblock %}

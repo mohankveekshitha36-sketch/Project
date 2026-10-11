@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block title %}Compliance Analytics | MediComply AI{% endblock %}
+{% block page_title %}Advanced Compliance Analytics{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+    <div class="col-lg-8" data-aos="fade-up">
+        <div class="glass-card p-4">
+            <h5 class="fw-bold mb-4">Long-term Violation Trends (12 Months)</h5>
+            <canvas id="trendsChart" height="300"></canvas>
+        </div>
+    </div>
+    <div class="col-lg-4" data-aos="fade-up" data-aos-delay="200">
+        <div class="glass-card p-4">
+            <h5 class="fw-bold mb-4">Top Risk Factors</h5>
+            <div class="list-group list-group-flush bg-transparent">
+                {% for risk in top_risks %}
+                <div class="list-group-item bg-transparent border-0 px-0 mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="small fw-bold">{{ risk.regulation.code }} - {{ risk.severity }}</span>
+                        <span class="small text-muted">{{ risk.confidence_score }}% Conf.</span>
+                    </div>
+                    <div class="progress" style="height: 6px;">
+                        <div class="progress-bar {% if risk.severity == 'High' %}bg-danger{% else %}bg-warning{% endif %}"
+                            style="width: {{ risk.confidence_score }}%"></div>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-muted">No high-risk data available.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4" data-aos="fade-up" data-aos-delay="300">
+    <div class="col-md-6">
+        <div class="glass-card p-4">
+            <h5 class="fw-bold mb-4">Data Access Categories</h5>
+            <canvas id="categoryChart" height="250"></canvas>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="glass-card p-4">
+            <h5 class="fw-bold mb-4">Departmental Compliance</h5>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Department</th>
+                            <th>Active Logs</th>
+                            <th>Violations</th>
+                            <th>Health</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Cardiology</td>
+                            <td>450</td>
+                            <td class="text-danger">12</td>
+                            <td><span class="badge bg-warning">Review</span></td>
+                        </tr>
+                        <tr>
+                            <td>Radiology</td>
+                            <td>820</td>
+                            <td class="text-success">2</td>
+                            <td><span class="badge bg-success">Optimal</span></td>
+                        </tr>
+                        <tr>
+                            <td>Emergency</td>
+                            <td>1,240</td>
+                            <td class="text-danger">45</td>
+                            <td><span class="badge bg-danger">Critical</span></td>
+                        </tr>
+                        <tr>
+                            <td>Pharmacy</td>
+                            <td>310</td>
+                            <td class="text-success">0</td>
+                            <td><span class="badge bg-success">Optimal</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const trendsCtx = document.getElementById('trendsChart').getContext('2d');
+    new Chart(trendsCtx, {
+        type: 'bar',
+        data: {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+            datasets: [{
+                label: 'Violations Detected',
+                data: {{ violation_trends| safe }
+    },
+        backgroundColor: '#0d6efd',
+        borderRadius: 5
+            }]
+        },
+        options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+            y: { grid: { borderDash: [5, 5] } }
+        }
+    }
+    });
+
+    const catCtx = document.getElementById('categoryChart').getContext('2d');
+    new Chart(catCtx, {
+        type: 'polarArea',
+        data: {
+            labels: ['PHI Access', 'Login Activity', 'System Updates', 'Data Export'],
+            datasets: [{
+                data: [45, 25, 15, 15],
+                backgroundColor: [
+                    'rgba(13, 110, 253, 0.7)',
+                    'rgba(25, 135, 84, 0.7)',
+                    'rgba(255, 193, 7, 0.7)',
+                    'rgba(220, 53, 69, 0.7)'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'right' } }
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Activity Logs | AI Healthcare Compliance{% endblock %}
+{% block page_title %}Patient Data Access Monitoring{% endblock %}
+
+{% block content %}
+<div class="card p-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h5 class="fw-bold mb-0">System-wide Activity Logs</h5>
+        <div class="d-flex gap-2">
+            <input type="text" class="form-control form-control-sm" placeholder="Search Patient ID...">
+            <button class="btn btn-outline-secondary btn-sm"><i class="fas fa-filter me-1"></i> Filter</button>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="bg-light">
+                <tr>
+                    <th>Timestamp</th>
+                    <th>Staff User</th>
+                    <th>Patient ID</th>
+                    <th>Action</th>
+                    <th>Resource</th>
+                    <th>IP Address</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td class="text-muted small">{{ log.timestamp|date:"Y-m-d H:i:s" }}</td>
+                    <td><i class="fas fa-user-circle me-1 text-primary"></i> {{ log.user.username }}</td>
+                    <td><span class="badge bg-soft-green text-medical-green border border-success p-2">{{ log.patient_id
+                            }}</span></td>
+                    <td>{{ log.action }}</td>
+                    <td><small class="text-muted">{{ log.resource_accessed }}</small></td>
+                    <td><code class="text-dark">{{ log.ip_address }}</code></td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center text-muted py-4">No activity logs recorded.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if is_paginated %}
+    <nav aria-label="Page navigation" class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+            <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+            </li>
+            {% endif %}
+            <li class="page-item disabled"><span class="page-link">Page {{ page_obj.number }} of {{ paginator.num_pages
+                    }}</span></li>
+            {% if page_obj.has_next %}
+            <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a></li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}

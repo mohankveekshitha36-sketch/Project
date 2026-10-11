@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}Login | AI Healthcare Compliance{% endblock %}
+{% block page_title %}System Authentication{% endblock %}
+
+{% block sidebar %}{% endblock %}
+
+{% block content %}
+<style>
+    #sidebar {
+        display: none;
+    }
+
+    #content {
+        margin-left: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 80vh;
+    }
+
+    .medical-header {
+        display: none;
+    }
+
+    footer {
+        position: absolute;
+        bottom: 20px;
+        width: 100%;
+    }
+</style>
+
+<div class="row justify-content-center w-100">
+    <div class="col-md-4">
+        <div class="card glass-card p-5">
+            <div class="text-center mb-5">
+                <i class="fas fa-user-shield text-primary fa-3x mb-3"></i>
+                <h3 class="fw-bold">Secure Login</h3>
+                <p class="text-muted">Enter credentials to access the compliance portal</p>
+            </div>
+
+            <form method="post" action="{% url 'login' %}">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label class="form-label">Username</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light"><i class="fas fa-user"></i></span>
+                        <input type="text" name="username" class="form-control" placeholder="staff_jsmith" required>
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label class="form-label">Password</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light"><i class="fas fa-lock"></i></span>
+                        <input type="password" name="password" class="form-control" placeholder="••••••••" required>
+                    </div>
+                </div>
+
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary btn-lg rounded-pill">Sign In</button>
+                </div>
+
+                <div class="mt-4 text-center">
+                    <small class="text-muted">Demo: admin / admin123 or staff_jsmith / staff123</small>
+                    <div class="mt-2">
+                        <small class="text-muted">New Staff Officer? <a href="{% url 'compliance:signup' %}"
+                                class="text-primary fw-bold text-decoration-none">Sign Up Here</a></small>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
